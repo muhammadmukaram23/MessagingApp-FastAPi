@@ -7,8 +7,15 @@ import schemas
 import crud
 from database import get_db
 from auth import verify_token   # for verfication token auth
+from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI(title="Messaging System API")
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow requests from any origin
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
 
 
 @app.get("/")
