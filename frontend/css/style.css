@@ -1,0 +1,106 @@
+/* General Styles */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    background-color: #ffffff;
+    border-right: 1px solid #dee2e6;
+    height: 100vh;
+    position: fixed;
+    width: 25%;
+}
+
+.user-profile {
+    border-bottom: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+.contacts-list {
+    height: calc(100vh - 120px);
+    overflow-y: auto;
+}
+
+/* Chat Area Styles */
+.chat-area {
+    margin-left: 25%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.messages-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    background-color: #f8f9fa;
+}
+
+.message-input {
+    background-color: #ffffff;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Message Styles */
+.message {
+    margin-bottom: 1rem;
+    max-width: 70%;
+}
+
+.message.sent {
+    margin-left: auto;
+    background-color: #007bff;
+    color: white;
+    border-radius: 15px 15px 0 15px;
+    padding: 10px 15px;
+}
+
+.message.received {
+    margin-right: auto;
+    background-color: #e9ecef;
+    border-radius: 15px 15px 15px 0;
+    padding: 10px 15px;
+}
+
+/* Contact List Styles */
+.contact-item {
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    transition: background-color 0.2s;
+}
+
+.contact-item:hover {
+    background-color: #f8f9fa;
+}
+
+.contact-item.active {
+    background-color: #e9ecef;
+}
+
+/* Form Styles */
+.form-control:focus {
+    box-shadow: none;
+    border-color: #007bff;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+    
+    .chat-area {
+        margin-left: 0;
+        height: calc(100vh - 200px);
+    }
+} 

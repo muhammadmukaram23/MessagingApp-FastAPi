@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from typing import List, Optional
+import bcrypt
 
 import models
 import schemas
@@ -12,11 +13,26 @@ def get_user(db: Session, user_id: int):
 def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
 
+def verify_user_credentials(db: Session, email: str, password: str):
+    user = get_user_by_email(db, email)
+    if not user:
+        return None
+    # Verify the password against the stored hash
+    if bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
+        return user
+    return None
+
 def get_users(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.User).offset(skip).limit(limit).all()
 
 def create_user(db: Session, user: schemas.UserCreate):
-    db_user = models.User(username=user.username, email=user.email)
+    # Hash the password before storing
+    hashed_password = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt())
+    db_user = models.User(
+        username=user.username,
+        email=user.email,
+        password=hashed_password.decode('utf-8')
+    )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -63,33 +79,6 @@ def delete_contact(db: Session, contact_id: int):
     db.commit()
     return db_contact
 
-# Conversation CRUD operations
-def get_conversation(db: Session, conversation_id: int):
-    return db.query(models.Conversation).filter(models.Conversation.conversation_id == conversation_id).first()
-
-def get_conversations(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Conversation).offset(skip).limit(limit).all()
-
-def get_user_conversations(db: Session, user_id: int):
-    return db.query(models.Conversation)\
-        .join(models.Message, models.Conversation.conversation_id == models.Message.conversation_id)\
-        .filter((models.Message.sender_id == user_id) | (models.Message.recipient_id == user_id))\
-        .distinct()\
-        .all()
-
-def create_conversation(db: Session, conversation: schemas.ConversationCreate):
-    db_conversation = models.Conversation(subject=conversation.subject)
-    db.add(db_conversation)
-    db.commit()
-    db.refresh(db_conversation)
-    return db_conversation
-
-def delete_conversation(db: Session, conversation_id: int):
-    db_conversation = db.query(models.Conversation).filter(models.Conversation.conversation_id == conversation_id).first()
-    db.delete(db_conversation)
-    db.commit()
-    return db_conversation
-
 # Message CRUD operations
 def get_message(db: Session, message_id: int):
     return db.query(models.Message).filter(models.Message.message_id == message_id).first()
@@ -107,7 +96,6 @@ def create_message(db: Session, message: schemas.MessageCreate):
     db_message = models.Message(
         sender_id=message.sender_id,
         recipient_id=message.recipient_id,
-        conversation_id=message.conversation_id,
         content=message.content
     )
     db.add(db_message)
@@ -149,3 +137,10 @@ def delete_notification(db: Session, notification_id: int):
     db.delete(db_notification)
     db.commit()
     return db_notification
+
+# Add function to get all messages between two users
+def get_messages_between_users(db: Session, user1_id: int, user2_id: int):
+    return db.query(models.Message).filter(
+        ((models.Message.sender_id == user1_id) & (models.Message.recipient_id == user2_id)) |
+        ((models.Message.sender_id == user2_id) & (models.Message.recipient_id == user1_id))
+    ).order_by(models.Message.timestamp).all()

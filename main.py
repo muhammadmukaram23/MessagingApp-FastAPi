@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Form
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -17,23 +17,29 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
+# Login endpoint
+@app.post("/login/", tags=["Authentication"])
+def login(email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    user = crud.verify_user_credentials(db, email, password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return {"user_id": user.user_id, "username": user.username, "email": user.email}
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the Messaging System API"}
 
-# User endpoints
-@app.post("/users/", response_model=schemas.User, status_code=status.HTTP_201_CREATED, tags=["Users"],dependencies=[Depends(verify_token)])
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_email(db, email=user.email)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    return crud.create_user(db=db, user=user)
-
+# User endpoints (only GET with email filter and GET by id)
 @app.get("/users/", response_model=List[schemas.User],tags=["Users"],dependencies=[Depends(verify_token)])
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    users = crud.get_users(db, skip=skip, limit=limit)
-    return users
+def read_users(skip: int = 0, limit: int = 100, email: str = None, db: Session = Depends(get_db)):
+    if email:
+        user = crud.get_user_by_email(db, email=email)
+        return [user] if user else []
+    return []  # Only allow email filter
 
 @app.get("/users/{user_id}", response_model=schemas.User,tags=["Users"],dependencies=[Depends(verify_token)])
 def read_user(user_id: int, db: Session = Depends(get_db)):
@@ -42,112 +48,36 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
 
-@app.put("/users/{user_id}", response_model=schemas.User,tags=["Users"],dependencies=[Depends(verify_token)])
-def update_user(user_id: int, user: schemas.UserUpdate, db: Session = Depends(get_db)):
-    db_user = crud.get_user(db, user_id=user_id)
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return crud.update_user(db=db, user_id=user_id, user=user)
-
-@app.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT,tags=["Users"],dependencies=[Depends(verify_token)])
-def delete_user(user_id: int, db: Session = Depends(get_db)):
-    db_user = crud.get_user(db, user_id=user_id)
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    crud.delete_user(db=db, user_id=user_id)
-    return {"detail": "User deleted successfully"}
-
-# Contact endpoints
+# Contacts endpoints (only POST and GET by user)
 @app.post("/contacts/", response_model=schemas.Contact, status_code=status.HTTP_201_CREATED,tags=["Contacts"],dependencies=[Depends(verify_token)])
 def create_contact(contact: schemas.ContactCreate, db: Session = Depends(get_db)):
     return crud.create_contact(db=db, contact=contact)
-
-@app.get("/contacts/", response_model=List[schemas.Contact],tags=["Contacts"],dependencies=[Depends(verify_token)])
-def read_contacts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    contacts = crud.get_contacts(db, skip=skip, limit=limit)
-    return contacts
-
-@app.get("/contacts/{contact_id}", response_model=schemas.Contact,tags=["Contacts"],dependencies=[Depends(verify_token)])
-def read_contact(contact_id: int, db: Session = Depends(get_db)):
-    db_contact = crud.get_contact(db, contact_id=contact_id)
-    if db_contact is None:
-        raise HTTPException(status_code=404, detail="Contact not found")
-    return db_contact
 
 @app.get("/users/{user_id}/contacts", response_model=List[schemas.Contact],tags=["Contacts"],dependencies=[Depends(verify_token)])
 def read_user_contacts(user_id: int, db: Session = Depends(get_db)):
     contacts = crud.get_user_contacts(db, user_id=user_id)
     return contacts
 
-@app.delete("/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT,tags=["Contacts"],dependencies=[Depends(verify_token)])
-def delete_contact(contact_id: int, db: Session = Depends(get_db)):
-    db_contact = crud.get_contact(db, contact_id=contact_id)
-    if db_contact is None:
-        raise HTTPException(status_code=404, detail="Contact not found")
-    crud.delete_contact(db=db, contact_id=contact_id)
-    return {"detail": "Contact deleted successfully"}
-
-# Conversation endpoints
-@app.post("/conversations/", response_model=schemas.Conversation, status_code=status.HTTP_201_CREATED,tags=["Conversations"],dependencies=[Depends(verify_token)])
-def create_conversation(conversation: schemas.ConversationCreate, db: Session = Depends(get_db)):
-    return crud.create_conversation(db=db, conversation=conversation)
-
-@app.get("/conversations/", response_model=List[schemas.Conversation],tags=["Conversations"],dependencies=[Depends(verify_token)])
-def read_conversations(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    conversations = crud.get_conversations(db, skip=skip, limit=limit)
-    return conversations
-
-@app.get("/conversations/{conversation_id}", response_model=schemas.Conversation,tags=["Conversations"],dependencies=[Depends(verify_token)])
-def read_conversation(conversation_id: int, db: Session = Depends(get_db)):
-    db_conversation = crud.get_conversation(db, conversation_id=conversation_id)
-    if db_conversation is None:
-        raise HTTPException(status_code=404, detail="Conversation not found")
-    return db_conversation
-
-@app.get("/users/{user_id}/conversations", response_model=List[schemas.Conversation],tags=["Conversations"],dependencies=[Depends(verify_token)])
-def read_user_conversations(user_id: int, db: Session = Depends(get_db)):
-    conversations = crud.get_user_conversations(db, user_id=user_id)
-    return conversations
-
-@app.delete("/conversations/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT,tags=["Conversations"],dependencies=[Depends(verify_token)])
-def delete_conversation(conversation_id: int, db: Session = Depends(get_db)):
-    db_conversation = crud.get_conversation(db, conversation_id=conversation_id)
-    if db_conversation is None:
-        raise HTTPException(status_code=404, detail="Conversation not found")
-    crud.delete_conversation(db=db, conversation_id=conversation_id)
-    return {"detail": "Conversation deleted successfully"}
-
-# Message endpoints
-@app.post("/messages/", response_model=schemas.Message, status_code=status.HTTP_201_CREATED,tags=["Messages"],dependencies=[Depends(verify_token)])
+# Message endpoints (only POST and GET between two users)
+@app.post("/messages/", response_model=schemas.Message, status_code=status.HTTP_201_CREATED, tags=["Messages"], dependencies=[Depends(verify_token)])
 def create_message(message: schemas.MessageCreate, db: Session = Depends(get_db)):
-    return crud.create_message(db=db, message=message)
+    # Create the message
+    msg = crud.create_message(db=db, message=message)
+    # Auto-add contacts in both directions if not already present
+    from models import Contact
+    if not db.query(Contact).filter_by(user_id=message.sender_id, contact_user_id=message.recipient_id).first():
+        db.add(Contact(user_id=message.sender_id, contact_user_id=message.recipient_id))
+    if not db.query(Contact).filter_by(user_id=message.recipient_id, contact_user_id=message.sender_id).first():
+        db.add(Contact(user_id=message.recipient_id, contact_user_id=message.sender_id))
+    db.commit()
+    return msg
 
-@app.get("/messages/", response_model=List[schemas.Message],tags=["Messages"],dependencies=[Depends(verify_token)])
-def read_messages(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    messages = crud.get_messages(db, skip=skip, limit=limit)
+@app.get("/messages/between/{user1_id}/{user2_id}", response_model=List[schemas.Message], tags=["Messages"], dependencies=[Depends(verify_token)])
+def get_messages_between_users(user1_id: int, user2_id: int, db: Session = Depends(get_db)):
+    messages = crud.get_messages_between_users(db, user1_id, user2_id)
     return messages
 
-@app.get("/messages/{message_id}", response_model=schemas.Message,tags=["Messages"],dependencies=[Depends(verify_token)])
-def read_message(message_id: int, db: Session = Depends(get_db)):
-    db_message = crud.get_message(db, message_id=message_id)
-    if db_message is None:
-        raise HTTPException(status_code=404, detail="Message not found")
-    return db_message
-
-@app.get("/conversations/{conversation_id}/messages", response_model=List[schemas.Message],tags=["Messages"],dependencies=[Depends(verify_token)])
-def read_conversation_messages(conversation_id: int, db: Session = Depends(get_db)):
-    messages = crud.get_conversation_messages(db, conversation_id=conversation_id)
-    return messages
-
-@app.delete("/messages/{message_id}", status_code=status.HTTP_204_NO_CONTENT,tags=["Messages"],dependencies=[Depends(verify_token)])
-def delete_message(message_id: int, db: Session = Depends(get_db)):
-    db_message = crud.get_message(db, message_id=message_id)
-    if db_message is None:
-        raise HTTPException(status_code=404, detail="Message not found")
-    crud.delete_message(db=db, message_id=message_id)
-    return {"detail": "Message deleted successfully"}
-
-# Notification endpoints
+# Notification endpoints (optional, keep if used by frontend)
 @app.post("/notifications/", response_model=schemas.Notification, status_code=status.HTTP_201_CREATED,tags=["Notification"],dependencies=[Depends(verify_token)])
 def create_notification(notification: schemas.NotificationCreate, db: Session = Depends(get_db)):
     return crud.create_notification(db=db, notification=notification)
@@ -156,13 +86,6 @@ def create_notification(notification: schemas.NotificationCreate, db: Session = 
 def read_notifications(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     notifications = crud.get_notifications(db, skip=skip, limit=limit)
     return notifications
-
-@app.get("/notifications/{notification_id}", response_model=schemas.Notification,tags=["Notification"],dependencies=[Depends(verify_token)])
-def read_notification(notification_id: int, db: Session = Depends(get_db)):
-    db_notification = crud.get_notification(db, notification_id=notification_id)
-    if db_notification is None:
-        raise HTTPException(status_code=404, detail="Notification not found")
-    return db_notification
 
 @app.get("/users/{user_id}/notifications", response_model=List[schemas.Notification],tags=["Notification"],dependencies=[Depends(verify_token)])
 def read_user_notifications(user_id: int, db: Session = Depends(get_db)):

@@ -8,11 +8,12 @@ class UserBase(BaseModel):
     email: EmailStr
 
 class UserCreate(UserBase):
-    pass
+    password: str
 
 class UserUpdate(BaseModel):
     username: Optional[str] = None
     email: Optional[EmailStr] = None
+    password: Optional[str] = None
 
 class User(UserBase):
     user_id: int
@@ -51,11 +52,12 @@ class Conversation(ConversationBase):
 class MessageBase(BaseModel):
     sender_id: int
     recipient_id: int
-    conversation_id: int
     content: str
 
-class MessageCreate(MessageBase):
-    pass
+class MessageCreate(BaseModel):
+    sender_id: int
+    recipient_id: int
+    content: str
 
 class Message(MessageBase):
     message_id: int

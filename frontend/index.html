@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messaging System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Auth Section (Login/Register) -->
+            <div id="authSection" class="col-12 d-flex justify-content-center align-items-center min-vh-100">
+                <div class="card p-4 shadow">
+                    <!-- Toggle Buttons -->
+                    <div class="d-flex justify-content-center mb-4">
+                        <button class="btn btn-outline-primary me-2 active" id="loginToggle">Login</button>
+                        <button class="btn btn-outline-primary" id="registerToggle">Register</button>
+                    </div>
+
+                    <!-- Login Form -->
+                    <div id="loginFormContainer">
+                        <h2 class="text-center mb-4">Login</h2>
+                        <form id="loginForm">
+                            <div class="mb-3">
+                                <label for="loginEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="loginEmail" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="loginPassword" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="loginPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Login</button>
+                        </form>
+                    </div>
+
+                    <!-- Registration Form -->
+                    <div id="registerFormContainer" class="d-none">
+                        <h2 class="text-center mb-4">Register</h2>
+                        <form id="registerForm">
+                            <div class="mb-3">
+                                <label for="registerUsername" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="registerUsername" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="registerEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="registerEmail" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="registerPassword" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="registerPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Register</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main App (Hidden initially) -->
+            <div id="mainApp" class="col-12 d-none">
+                <div class="row">
+                    <!-- Sidebar -->
+                    <div class="col-md-3 sidebar">
+                        <div class="user-profile p-3">
+                            <h4 id="userName">User Name</h4>
+                            <p id="userEmail">user@email.com</p>
+                        </div>
+                        <div class="contacts-list p-3">
+                            <h5>Contacts</h5>
+                            <div id="contactsList" class="list-group">
+                                <!-- Contacts will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Area -->
+                    <div class="col-md-9 chat-area">
+                        <div class="chat-header p-3">
+                            <h4 id="currentChat">Select a contact to start chatting</h4>
+                        </div>
+                        <div class="messages-container p-3" id="messagesContainer">
+                            <!-- Messages will be populated here -->
+                        </div>
+                        <div class="message-input p-3">
+                            <form id="messageForm" class="d-flex">
+                                <input type="text" class="form-control me-2" id="messageInput" placeholder="Type a message...">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/contacts.js"></script>
+    <script src="js/messages.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
